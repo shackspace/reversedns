@@ -4,9 +4,8 @@ import re
 import time
 
 
-def get_ns_db():
-    ip_db = dict()
-    with open("db.shack", 'r') as dns:
+def get_ns_db(db="db.shack", ip_db=dict()):
+    with open(db, 'r') as dns:
         for line in dns:
             regex = re.compile(";.*?\n")
             line = re.sub(regex, "", line)  # remove comments
@@ -30,7 +29,7 @@ def revers_dns(net, ns_db=dict()):
     filename = network_address.split('.')[:-1]
     filename.reverse()
     filename = '.'.join(filename) + ".in-addr.arpa"
-    zone = filename + " " * max(0, 31 - len(filename))
+    zone = filename + "." + " " * max(0, 30 - len(filename))
     serial = time.strftime("%Y%m%d%H%M")
     header = """$TTL    86400
 %s IN      SOA     dns.shack. rz.lists.shackspace.de. (
@@ -44,7 +43,7 @@ def revers_dns(net, ns_db=dict()):
                                 IN      NS      fallbackns.shack.
 
 """ % (zone, serial)
-    with open(filename, 'w') as output:
+    with open("/etc/bind/pri/" + filename, 'w') as output:
         output.write(header)
         for address in network:
             if address in ns_db:
@@ -57,9 +56,8 @@ def revers_dns(net, ns_db=dict()):
 
 
 def main():
-    ns_db = get_ns_db()
+    ns_db = get_ns_db("/etc/bind/pri/db.shack")
     for i in range(256):
-        print(i)
         revers_dns("10.42.%i.0/24" % i, ns_db)
 
 
