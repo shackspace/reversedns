@@ -1,23 +1,7 @@
 #!/usr/bin/env python3
-try:
-    import ipaddress
-except ImportError:
-    import ipaddr as ipaddress
+import ipaddr
 import re
-
-
-HEADER = """$TTL    86400
-0.42.10.in-addr.arpa.           IN      SOA     dns.shack. rz.lists.shackspace.de. (
-                                2014072502; Serial
-                                604800; Refresh
-                                86400; Retry
-                                2419200; Expire
-                                604800 ); Negative Cache TTL
-;
-                                IN      NS      dns.shack.
-                                IN      NS      fallbackns.shack.
-
-"""
+import time
 
 
 def get_ns_db():
@@ -31,7 +15,7 @@ def get_ns_db():
                 continue
             if line[1] != "IN" or line[2] != 'A':
                 continue
-            address = ipaddress.ip_address(line[3])
+            address = ipaddr.IPAddress(line[3])
             name = line[0]
             ip_db[address] = name
         # for address in network:
@@ -41,20 +25,35 @@ def get_ns_db():
 
 
 def revers_dns(net, ns_db=dict()):
-    network = ipaddress.ip_network(net, strict=False)
-    network_address = str(network.network_address)
+    network = ipaddr.IPNetwork(net, strict=False)
+    network_address = str(network.network)
     filename = network_address.split('.')[:-1]
     filename.reverse()
     filename = '.'.join(filename) + ".in-addr.arpa"
+    zone = filename + " " * max(0, 31 - len(filename))
+    serial = time.strftime("%Y%m%d%H%M")
+    header = """$TTL    86400
+%s IN      SOA     dns.shack. rz.lists.shackspace.de. (
+                                %s; Serial
+                                604800; Refresh
+                                86400; Retry
+                                2419200; Expire
+                                604800 ); Negative Cache TTL
+;
+                                IN      NS      dns.shack.
+                                IN      NS      fallbackns.shack.
+
+""" % (zone, serial)
     with open(filename, 'w') as output:
-        output.write(HEADER)
+        output.write(header)
         for address in network:
             if address in ns_db:
                 name = ns_db[address]
             else:
                 name = str(address).replace('.', '-')
             suffix = str(address).split('.')[-1]
-            output.write("%31s IN      PTR     %s.shack.\n" % (suffix, name))
+            suffix = suffix + " " * max(0, 31 - len(suffix))
+            output.write("%s IN      PTR     %s.shack.\n" % (suffix, name))
 
 
 def main():
