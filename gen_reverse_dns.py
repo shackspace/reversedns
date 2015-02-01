@@ -61,6 +61,8 @@ def main():
     ns_db = get_ns_db("/etc/bind/pri/db.shack")
     for i in range(256):
         revers_dns("10.42.%i.0/24" % i, ns_db)
+    for subnet in ["10.0.0.0/24", "10.0.1.0/24"]:
+        revers_dns(subnet, ns_db)
 
 
 if __name__ == "__main__":
