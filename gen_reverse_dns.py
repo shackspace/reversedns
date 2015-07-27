@@ -16,6 +16,8 @@ def get_ns_db(db="db.shack", ip_db=dict()):
                 continue
             address = ipaddr.IPAddress(line[3])
             name = line[0]
+            if name[-1] != '.':
+                name = name + ".shack."
             ip_db[address] = name
         # for address in network:
         #     name = str(address).replace('.', '-')
@@ -54,7 +56,7 @@ $TTL    86400
                 name = str(address).replace('.', '-')
             suffix = str(address).split('.')[-1]
             suffix = suffix + " " * max(0, 31 - len(suffix))
-            output.write("%s IN      PTR     %s.shack.\n" % (suffix, name))
+            output.write("%s IN      PTR     %s\n" % (suffix, name))
 
 
 def main():
